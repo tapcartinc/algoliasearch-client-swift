@@ -36,7 +36,12 @@ extension URLRequest {
 
     var urlComponents = URLComponents()
     urlComponents.scheme = "https"
-    urlComponents.percentEncodedPath = command.path.absoluteString.removingPercentEncoding!
+    let commandPath = command.path.absoluteString.removingPercentEncoding!
+    if commandPath.rangeOfCharacter(from: CharacterSet.urlPathAllowed.inverted) != nil {
+        urlComponents.path = commandPath
+    } else {
+        urlComponents.percentEncodedPath = commandPath
+    }
 
     if let urlParameters = command.requestOptions?.urlParameters {
       urlComponents.queryItems = urlParameters.map { (key, value) in .init(name: key.rawValue, value: value) }

@@ -18,6 +18,12 @@ extension CharacterSet {
 
 }
 
+extension String {
+    func isEncoded() -> Bool {
+        return self.removingPercentEncoding != self
+    }
+}
+
 extension URLRequest {
 
   subscript(header key: HTTPHeaderKey) -> String? {
@@ -36,11 +42,22 @@ extension URLRequest {
 
     var urlComponents = URLComponents()
     urlComponents.scheme = "https"
+    
+    /*
+       Culture Kings edge case:
+       The object ID is doubly encoded by the time it gets here and fails on backend
+       example:
+       command.path.absoluteString == /1/indexes/shopify_production_collections/gid%253A%252F%252Fshopify%252FCollection%252F264617525382
+
+       For now will remove encoding once and set it as the percentEncodedPath property in order to backend API to work
+       */
+    
     let commandPath = command.path.absoluteString.removingPercentEncoding!
-    if commandPath.rangeOfCharacter(from: CharacterSet.urlPathAllowed.inverted) != nil {
-        urlComponents.path = commandPath
+    
+    if commandPath.isEncoded() {
+      urlComponents.percentEncodedPath = commandPath
     } else {
-        urlComponents.percentEncodedPath = commandPath
+      urlComponents.path = commandPath
     }
 
     if let urlParameters = command.requestOptions?.urlParameters {
